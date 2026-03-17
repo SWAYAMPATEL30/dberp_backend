@@ -1,0 +1,50 @@
+🌱 Starting database seed for Skyprint ERP...
+Cleaning up existing data...
+Creating permissions...
+Creating roles...
+Creating admin user...
+Creating 5 sample customers...
+Creating 5 sample vendors...
+Creating 5 sample materials...
+❌ Error seeding database: PrismaClientValidationError: 
+Invalid `prisma.material.create()` invocation in
+C:\Users\ipate\Downloads\DhruvilBhai\prisma\seed.ts:228:29
+
+  225 ];
+  226 await Promise.all(
+  227     materialData.map((m) =>
+→ 228         prisma.material.create({
+                data: {
+                  id: "d6e09f7c-00a5-4fe5-9c43-17e0292050df",
+                  updatedAt: new Date("2026-02-14T08:26:20.535Z"),
+                  code: "MAT005",
+                  name: "Lamination Film",
+                  category: "film",
+                  unit: "roll",
+                  cost: 500,
+                  ~~~~
+                  size: "Standard",
+                  gsm: 0,
+                  reorderPoint: 100,
+                  reorderQty: 500,
+                  standardCost: 500,
+                  isActive: true,
+              ?   createdAt?: DateTime,
+              ?   GoodsReceiptItem?: GoodsReceiptItemCreateNestedManyWithoutMaterialInput,
+              ?   MaterialIssue?: MaterialIssueCreateNestedManyWithoutMaterialInput,
+              ?   PurchaseOrderItem?: PurchaseOrderItemCreateNestedManyWithoutMaterialInput,
+              ?   Stock?: StockCreateNestedManyWithoutMaterialInput,
+              ?   StockAdjustment?: StockAdjustmentCreateNestedManyWithoutMaterialInput
+                }
+              })
+
+Unknown argument `cost`. Did you mean `code`? Available options are marked with ?.
+    at wn (C:\Users\ipate\Downloads\DhruvilBhai\node_modules\@prisma\client\runtime\library.js:29:1363)
+    at $n.handleRequestError (C:\Users\ipate\Downloads\DhruvilBhai\node_modules\@prisma\client\runtime\library.js:121:6958)
+    at $n.handleAndLogRequestError (C:\Users\ipate\Downloads\DhruvilBhai\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (C:\Users\ipate\Downloads\DhruvilBhai\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (C:\Users\ipate\Downloads\DhruvilBhai\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async Promise.all (index 4)
+    at async main (C:\Users\ipate\Downloads\DhruvilBhai\prisma\seed.ts:226:5) {
+  clientVersion: '5.22.0'
+}

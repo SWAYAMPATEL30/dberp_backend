@@ -1,0 +1,904 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id            String        @id
+  code          String        @unique
+  name          String
+  type          String
+  parentId      String?
+  isActive      Boolean       @default(true)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime
+  Account       Account?      @relation("AccountToAccount", fields: [parentId], references: [id])
+  other_Account Account[]     @relation("AccountToAccount")
+  Transaction   Transaction[]
+
+  @@index([code])
+  @@index([type])
+}
+
+model Alert {
+  id            String   @id
+  userId        String
+  type          String
+  title         String
+  message       String
+  isRead        Boolean  @default(false)
+  referenceType String?
+  referenceId   String?
+  createdAt     DateTime @default(now())
+  User          User     @relation(fields: [userId], references: [id])
+
+  @@index([createdAt])
+  @@index([isRead])
+  @@index([userId])
+}
+
+model Attendance {
+  id         String    @id
+  employeeId String
+  date       DateTime  @db.Date
+  checkIn    DateTime?
+  checkOut   DateTime?
+  status     String
+  workHours  Decimal?  @db.Decimal(5, 2)
+  overtime   Decimal?  @db.Decimal(5, 2)
+  notes      String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime
+  Employee   Employee  @relation(fields: [employeeId], references: [id])
+
+  @@unique([employeeId, date])
+  @@index([date])
+  @@index([employeeId])
+}
+
+model AuditLog {
+  id        String   @id
+  userId    String
+  action    String
+  entity    String
+  entityId  String
+  changes   String?
+  ipAddress String?
+  createdAt DateTime @default(now())
+  User      User     @relation(fields: [userId], references: [id])
+
+  @@index([createdAt])
+  @@index([entity, entityId])
+  @@index([userId])
+}
+
+model Bill {
+  id          String     @id
+  billNumber  String     @unique
+  billDate    DateTime
+  dueDate     DateTime
+  vendorId    String
+  gstin       String?
+  subtotal    Decimal    @db.Decimal(15, 2)
+  cgst        Decimal    @default(0) @db.Decimal(15, 2)
+  sgst        Decimal    @default(0) @db.Decimal(15, 2)
+  igst        Decimal    @default(0) @db.Decimal(15, 2)
+  tds         Decimal    @default(0) @db.Decimal(15, 2)
+  totalAmount Decimal    @db.Decimal(15, 2)
+  paidAmount  Decimal    @default(0) @db.Decimal(15, 2)
+  status      String     @default("pending")
+  notes       String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime
+  Vendor      Vendor     @relation(fields: [vendorId], references: [id])
+  BillItem    BillItem[]
+  Payment     Payment[]
+
+  @@index([billDate])
+  @@index([billNumber])
+  @@index([vendorId])
+}
+
+model BillItem {
+  id          String  @id
+  billId      String
+  description String
+  quantity    Decimal @db.Decimal(10, 2)
+  unitPrice   Decimal @db.Decimal(15, 2)
+  taxRate     Decimal @db.Decimal(5, 2)
+  amount      Decimal @db.Decimal(15, 2)
+  hsnCode     String?
+  Bill        Bill    @relation(fields: [billId], references: [id], onDelete: Cascade)
+
+  @@index([billId])
+}
+
+model Contact {
+  id          String   @id
+  customerId  String
+  name        String
+  designation String?
+  email       String?
+  phone       String?
+  isPrimary   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime
+  Customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId])
+}
+
+model Customer {
+  id              String       @id
+  code            String       @unique
+  name            String
+  email           String?
+  phone           String?
+  gstin           String?
+  pan             String?
+  billingAddress  String?
+  shippingAddress String?
+  city            String?
+  state           String?
+  pincode         String?
+  country         String       @default("India")
+  creditLimit     Decimal?     @db.Decimal(15, 2)
+  creditDays      Int?
+  isActive        Boolean      @default(true)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime
+  Contact         Contact[]
+  Invoice         Invoice[]
+  Quotation       Quotation[]
+  SalesOrder      SalesOrder[]
+
+  @@index([code])
+  @@index([gstin])
+  @@index([name])
+}
+
+model EWayBill {
+  id              String    @id
+  shipmentId      String    @unique
+  eWayBillNo      String?   @unique
+  docType         String
+  docNumber       String
+  docDate         DateTime
+  transporterId   String?
+  transporterName String?
+  vehicleNumber   String
+  vehicleType     String?
+  distance        Int?
+  status          String    @default("draft")
+  generatedAt     DateTime?
+  validUntil      DateTime?
+  gstData         String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime
+  Shipment        Shipment  @relation(fields: [shipmentId], references: [id])
+
+  @@index([eWayBillNo])
+  @@index([shipmentId])
+}
+
+model Employee {
+  id              String            @id
+  employeeCode    String            @unique
+  firstName       String
+  lastName        String
+  email           String?           @unique
+  phone           String?
+  dateOfBirth     DateTime?
+  dateOfJoining   DateTime
+  dateOfLeaving   DateTime?
+  department      String?
+  designation     String?
+  basicSalary     Decimal?          @db.Decimal(10, 2)
+  pfNumber        String?
+  esiNumber       String?
+  panNumber       String?
+  aadharNumber    String?
+  address         String?
+  city            String?
+  state           String?
+  pincode         String?
+  isActive        Boolean           @default(true)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime
+  Attendance      Attendance[]
+  Leave           Leave[]
+  Payroll         Payroll[]
+  ShiftAssignment ShiftAssignment[]
+
+  @@index([email])
+  @@index([employeeCode])
+}
+
+model GSTReturn {
+  id         String    @id
+  returnType String
+  month      Int
+  year       Int
+  filedDate  DateTime?
+  status     String    @default("draft")
+  data       String
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime
+
+  @@unique([returnType, month, year])
+}
+
+model GoodsReceipt {
+  id               String             @id
+  grNumber         String             @unique
+  grDate           DateTime
+  poId             String
+  notes            String?
+  createdAt        DateTime           @default(now())
+  PurchaseOrder    PurchaseOrder      @relation(fields: [poId], references: [id])
+  GoodsReceiptItem GoodsReceiptItem[]
+
+  @@index([grNumber])
+  @@index([poId])
+}
+
+model GoodsReceiptItem {
+  id           String       @id
+  grId         String
+  materialId   String
+  quantity     Decimal      @db.Decimal(10, 2)
+  unitCost     Decimal      @db.Decimal(10, 2)
+  batchNo      String?
+  GoodsReceipt GoodsReceipt @relation(fields: [grId], references: [id], onDelete: Cascade)
+  Material     Material     @relation(fields: [materialId], references: [id])
+
+  @@index([grId])
+  @@index([materialId])
+}
+
+model Invoice {
+  id            String        @id
+  invoiceNumber String        @unique
+  invoiceDate   DateTime
+  dueDate       DateTime
+  customerId    String
+  salesOrderId  String?       @unique
+  gstin         String?
+  placeOfSupply String
+  reverseCharge Boolean       @default(false)
+  subtotal      Decimal       @db.Decimal(15, 2)
+  cgst          Decimal       @default(0) @db.Decimal(15, 2)
+  sgst          Decimal       @default(0) @db.Decimal(15, 2)
+  igst          Decimal       @default(0) @db.Decimal(15, 2)
+  discount      Decimal       @default(0) @db.Decimal(15, 2)
+  totalAmount   Decimal       @db.Decimal(15, 2)
+  paidAmount    Decimal       @default(0) @db.Decimal(15, 2)
+  irn           String?       @unique
+  ackNo         String?
+  ackDate       DateTime?
+  qrCode        String?
+  status        String        @default("draft")
+  notes         String?
+  terms         String?
+  createdById   String
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime
+  User          User          @relation(fields: [createdById], references: [id])
+  Customer      Customer      @relation(fields: [customerId], references: [id])
+  SalesOrder    SalesOrder?   @relation(fields: [salesOrderId], references: [id])
+  InvoiceItem   InvoiceItem[]
+  Payment       Payment[]
+
+  @@index([customerId])
+  @@index([invoiceDate])
+  @@index([invoiceNumber])
+  @@index([status])
+}
+
+model InvoiceItem {
+  id          String  @id
+  invoiceId   String
+  description String
+  quantity    Decimal @db.Decimal(10, 2)
+  unitPrice   Decimal @db.Decimal(15, 2)
+  taxRate     Decimal @db.Decimal(5, 2)
+  amount      Decimal @db.Decimal(15, 2)
+  hsnCode     String?
+  Invoice     Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+}
+
+model Job {
+  id               String            @id
+  jobNumber        String            @unique
+  salesOrderId     String
+  salesOrderItemId String?
+  description      String
+  specifications   String?
+  quantity         Decimal           @db.Decimal(10, 2)
+  producedQty      Decimal           @default(0) @db.Decimal(10, 2)
+  startDate        DateTime?
+  endDate          DateTime?
+  dueDate          DateTime
+  status           String            @default("pending")
+  priority         String            @default("normal")
+  estimatedCost    Decimal           @db.Decimal(15, 2)
+  actualCost       Decimal           @default(0) @db.Decimal(15, 2)
+  createdById      String
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime
+  User             User              @relation(fields: [createdById], references: [id])
+  SalesOrder       SalesOrder        @relation(fields: [salesOrderId], references: [id])
+  JobProgress      JobProgress[]
+  JobTicket        JobTicket[]
+  MachineSchedule  MachineSchedule[]
+  MaterialIssue    MaterialIssue[]
+  QualityCheck     QualityCheck[]
+
+  @@index([dueDate])
+  @@index([jobNumber])
+  @@index([salesOrderId])
+  @@index([status])
+}
+
+model JobProgress {
+  id         String   @id
+  jobId      String
+  stage      String
+  status     String
+  percentage Int      @default(0)
+  notes      String?
+  recordedBy String?
+  recordedAt DateTime @default(now())
+  Job        Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+  @@index([recordedAt])
+}
+
+model JobTicket {
+  id               String   @id
+  jobId            String
+  ticketNumber     String   @unique
+  stage            String
+  instructions     String
+  artworkFile      String?
+  plateDetails     String?
+  machineId        String?
+  colors           String?
+  runLength        Int?
+  paperDetails     String?
+  finishingDetails String?
+  status           String   @default("pending")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime
+  Job              Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  Machine          Machine? @relation(fields: [machineId], references: [id])
+
+  @@index([jobId])
+  @@index([stage])
+  @@index([ticketNumber])
+}
+
+model KPI {
+  id          String   @id
+  name        String   @unique
+  description String?
+  category    String
+  formula     String?
+  target      Decimal? @db.Decimal(15, 2)
+  unit        String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime
+}
+
+model Leave {
+  id         String    @id
+  employeeId String
+  leaveType  String
+  fromDate   DateTime  @db.Date
+  toDate     DateTime  @db.Date
+  days       Decimal   @db.Decimal(3, 1)
+  reason     String?
+  status     String    @default("pending")
+  approvedBy String?
+  approvedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime
+  Employee   Employee  @relation(fields: [employeeId], references: [id])
+
+  @@index([employeeId])
+  @@index([status])
+}
+
+model Machine {
+  id                 String               @id
+  code               String               @unique
+  name               String
+  type               String
+  capacity           String?
+  hourlyRate         Decimal?             @db.Decimal(10, 2)
+  isActive           Boolean              @default(true)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime
+  JobTicket          JobTicket[]
+  MachineMaintenance MachineMaintenance[]
+  MachineSchedule    MachineSchedule[]
+
+  @@index([code])
+  @@index([type])
+}
+
+model MachineMaintenance {
+  id              String   @id
+  machineId       String
+  maintenanceDate DateTime
+  type            String
+  description     String
+  cost            Decimal? @db.Decimal(10, 2)
+  performedBy     String?
+  createdAt       DateTime @default(now())
+  Machine         Machine  @relation(fields: [machineId], references: [id])
+
+  @@index([machineId])
+  @@index([maintenanceDate])
+}
+
+model MachineSchedule {
+  id        String   @id
+  machineId String
+  jobId     String
+  startTime DateTime
+  endTime   DateTime
+  status    String   @default("scheduled")
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  Job       Job      @relation(fields: [jobId], references: [id])
+  Machine   Machine  @relation(fields: [machineId], references: [id])
+
+  @@index([jobId])
+  @@index([machineId])
+  @@index([startTime])
+}
+
+model Material {
+  id                String              @id
+  code              String              @unique
+  name              String
+  category          String
+  unit              String
+  size              String?
+  gsm               Int?
+  reorderPoint      Decimal?            @db.Decimal(10, 2)
+  reorderQty        Decimal?            @db.Decimal(10, 2)
+  standardCost      Decimal?            @db.Decimal(10, 2)
+  isActive          Boolean             @default(true)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime
+  GoodsReceiptItem  GoodsReceiptItem[]
+  MaterialIssue     MaterialIssue[]
+  PurchaseOrderItem PurchaseOrderItem[]
+  Stock             Stock[]
+  StockAdjustment   StockAdjustment[]
+
+  @@index([category])
+  @@index([code])
+}
+
+model MaterialIssue {
+  id          String   @id
+  issueNumber String   @unique
+  issueDate   DateTime
+  jobId       String
+  materialId  String
+  quantity    Decimal  @db.Decimal(10, 2)
+  wastage     Decimal  @default(0) @db.Decimal(10, 2)
+  notes       String?
+  issuedBy    String?
+  createdAt   DateTime @default(now())
+  Job         Job      @relation(fields: [jobId], references: [id])
+  Material    Material @relation(fields: [materialId], references: [id])
+
+  @@index([issueNumber])
+  @@index([jobId])
+  @@index([materialId])
+}
+
+model Payment {
+  id            String   @id
+  paymentNumber String   @unique
+  paymentDate   DateTime
+  amount        Decimal  @db.Decimal(15, 2)
+  paymentMethod String
+  referenceNo   String?
+  notes         String?
+  invoiceId     String?
+  billId        String?
+  createdAt     DateTime @default(now())
+  Bill          Bill?    @relation(fields: [billId], references: [id])
+  Invoice       Invoice? @relation(fields: [invoiceId], references: [id])
+
+  @@index([billId])
+  @@index([invoiceId])
+  @@index([paymentNumber])
+}
+
+model Payroll {
+  id              String    @id
+  employeeId      String
+  month           Int
+  year            Int
+  basicSalary     Decimal   @db.Decimal(10, 2)
+  allowances      Decimal   @default(0) @db.Decimal(10, 2)
+  overtime        Decimal   @default(0) @db.Decimal(10, 2)
+  grossSalary     Decimal   @db.Decimal(10, 2)
+  pfEmployee      Decimal   @default(0) @db.Decimal(10, 2)
+  esiEmployee     Decimal   @default(0) @db.Decimal(10, 2)
+  tds             Decimal   @default(0) @db.Decimal(10, 2)
+  otherDeductions Decimal   @default(0) @db.Decimal(10, 2)
+  totalDeductions Decimal   @db.Decimal(10, 2)
+  pfEmployer      Decimal   @default(0) @db.Decimal(10, 2)
+  esiEmployer     Decimal   @default(0) @db.Decimal(10, 2)
+  netSalary       Decimal   @db.Decimal(10, 2)
+  status          String    @default("draft")
+  paidDate        DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime
+  Employee        Employee  @relation(fields: [employeeId], references: [id])
+
+  @@unique([employeeId, month, year])
+  @@index([employeeId])
+  @@index([month, year])
+}
+
+model Permission {
+  id             String           @id
+  name           String           @unique
+  description    String?
+  module         String
+  action         String
+  RolePermission RolePermission[]
+}
+
+model PurchaseOrder {
+  id                String              @id
+  poNumber          String              @unique
+  poDate            DateTime
+  vendorId          String
+  deliveryDate      DateTime?
+  subtotal          Decimal             @db.Decimal(15, 2)
+  tax               Decimal             @db.Decimal(15, 2)
+  totalAmount       Decimal             @db.Decimal(15, 2)
+  status            String              @default("draft")
+  notes             String?
+  approvedBy        String?
+  approvedAt        DateTime?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime
+  GoodsReceipt      GoodsReceipt[]
+  Vendor            Vendor              @relation(fields: [vendorId], references: [id])
+  PurchaseOrderItem PurchaseOrderItem[]
+
+  @@index([poNumber])
+  @@index([status])
+  @@index([vendorId])
+}
+
+model PurchaseOrderItem {
+  id            String        @id
+  poId          String
+  materialId    String
+  description   String?
+  quantity      Decimal       @db.Decimal(10, 2)
+  unitPrice     Decimal       @db.Decimal(10, 2)
+  taxRate       Decimal       @db.Decimal(5, 2)
+  amount        Decimal       @db.Decimal(15, 2)
+  receivedQty   Decimal       @default(0) @db.Decimal(10, 2)
+  Material      Material      @relation(fields: [materialId], references: [id])
+  PurchaseOrder PurchaseOrder @relation(fields: [poId], references: [id], onDelete: Cascade)
+
+  @@index([materialId])
+  @@index([poId])
+}
+
+model QualityCheck {
+  id         String   @id
+  jobId      String
+  stage      String
+  checkDate  DateTime
+  result     String
+  parameters String?
+  notes      String?
+  checkedBy  String?
+  createdAt  DateTime @default(now())
+  Job        Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([checkDate])
+  @@index([jobId])
+}
+
+model Quotation {
+  id              String          @id
+  quotationNumber String          @unique
+  quotationDate   DateTime
+  validUntil      DateTime
+  customerId      String
+  subtotal        Decimal         @db.Decimal(15, 2)
+  tax             Decimal         @db.Decimal(15, 2)
+  discount        Decimal         @default(0) @db.Decimal(15, 2)
+  totalAmount     Decimal         @db.Decimal(15, 2)
+  status          String          @default("draft")
+  notes           String?
+  terms           String?
+  approvedBy      String?
+  approvedAt      DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime
+  Customer        Customer        @relation(fields: [customerId], references: [id])
+  QuotationItem   QuotationItem[]
+  SalesOrder      SalesOrder?
+
+  @@index([customerId])
+  @@index([quotationNumber])
+  @@index([status])
+}
+
+model QuotationItem {
+  id             String    @id
+  quotationId    String
+  description    String
+  specifications String?
+  productType    String?
+  size           String?
+  quantity       Decimal   @db.Decimal(10, 2)
+  paperType      String?
+  paperGsm       Int?
+  colors         String?
+  finishing      String?
+  paperCost      Decimal   @default(0) @db.Decimal(15, 2)
+  inkCost        Decimal   @default(0) @db.Decimal(15, 2)
+  plateCost      Decimal   @default(0) @db.Decimal(15, 2)
+  laborCost      Decimal   @default(0) @db.Decimal(15, 2)
+  machineCost    Decimal   @default(0) @db.Decimal(15, 2)
+  finishingCost  Decimal   @default(0) @db.Decimal(15, 2)
+  overheadCost   Decimal   @default(0) @db.Decimal(15, 2)
+  unitPrice      Decimal   @db.Decimal(15, 2)
+  taxRate        Decimal   @db.Decimal(5, 2)
+  amount         Decimal   @db.Decimal(15, 2)
+  Quotation      Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+
+  @@index([quotationId])
+}
+
+model Role {
+  id             String           @id
+  name           String           @unique
+  description    String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime
+  RolePermission RolePermission[]
+  User           User[]
+}
+
+model RolePermission {
+  id           String     @id
+  roleId       String
+  permissionId String
+  Permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  Role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+}
+
+model SalesOrder {
+  id             String           @id
+  orderNumber    String           @unique
+  orderDate      DateTime
+  deliveryDate   DateTime
+  customerId     String
+  quotationId    String?          @unique
+  subtotal       Decimal          @db.Decimal(15, 2)
+  tax            Decimal          @db.Decimal(15, 2)
+  discount       Decimal          @default(0) @db.Decimal(15, 2)
+  totalAmount    Decimal          @db.Decimal(15, 2)
+  status         String           @default("pending")
+  priority       String           @default("normal")
+  notes          String?
+  createdById    String
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime
+  Invoice        Invoice?
+  Job            Job[]
+  User           User             @relation(fields: [createdById], references: [id])
+  Customer       Customer         @relation(fields: [customerId], references: [id])
+  Quotation      Quotation?       @relation(fields: [quotationId], references: [id])
+  SalesOrderItem SalesOrderItem[]
+  Shipment       Shipment[]
+
+  @@index([customerId])
+  @@index([deliveryDate])
+  @@index([orderNumber])
+  @@index([status])
+}
+
+model SalesOrderItem {
+  id             String     @id
+  salesOrderId   String
+  description    String
+  specifications String?
+  productType    String?
+  size           String?
+  quantity       Decimal    @db.Decimal(10, 2)
+  paperType      String?
+  paperGsm       Int?
+  colors         String?
+  finishing      String?
+  unitPrice      Decimal    @db.Decimal(15, 2)
+  taxRate        Decimal    @db.Decimal(5, 2)
+  amount         Decimal    @db.Decimal(15, 2)
+  SalesOrder     SalesOrder @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
+
+  @@index([salesOrderId])
+}
+
+model Shift {
+  id              String            @id
+  name            String            @unique
+  startTime       String
+  endTime         String
+  isActive        Boolean           @default(true)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime
+  ShiftAssignment ShiftAssignment[]
+}
+
+model ShiftAssignment {
+  id         String   @id
+  employeeId String
+  shiftId    String
+  date       DateTime @db.Date
+  createdAt  DateTime @default(now())
+  Employee   Employee @relation(fields: [employeeId], references: [id])
+  Shift      Shift    @relation(fields: [shiftId], references: [id])
+
+  @@unique([employeeId, date])
+  @@index([date])
+  @@index([employeeId])
+  @@index([shiftId])
+}
+
+model Shipment {
+  id             String     @id
+  shipmentNumber String     @unique
+  salesOrderId   String
+  shipmentDate   DateTime
+  courierName    String?
+  trackingNumber String?
+  vehicleNumber  String?
+  driverName     String?
+  driverPhone    String?
+  status         String     @default("pending")
+  deliveredAt    DateTime?
+  receivedBy     String?
+  notes          String?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime
+  EWayBill       EWayBill?
+  SalesOrder     SalesOrder @relation(fields: [salesOrderId], references: [id])
+
+  @@index([salesOrderId])
+  @@index([shipmentNumber])
+  @@index([status])
+}
+
+model Stock {
+  id         String   @id
+  materialId String
+  location   String   @default("main_warehouse")
+  quantity   Decimal  @db.Decimal(10, 2)
+  value      Decimal  @db.Decimal(15, 2)
+  updatedAt  DateTime
+  Material   Material @relation(fields: [materialId], references: [id])
+
+  @@unique([materialId, location])
+  @@index([materialId])
+}
+
+model StockAdjustment {
+  id               String   @id
+  adjustmentNumber String   @unique
+  adjustmentDate   DateTime
+  materialId       String
+  quantity         Decimal  @db.Decimal(10, 2)
+  type             String
+  reason           String
+  notes            String?
+  adjustedBy       String?
+  createdAt        DateTime @default(now())
+  Material         Material @relation(fields: [materialId], references: [id])
+
+  @@index([adjustmentNumber])
+  @@index([materialId])
+}
+
+model TaxRate {
+  id            String    @id
+  name          String
+  rate          Decimal   @db.Decimal(5, 2)
+  type          String
+  isActive      Boolean   @default(true)
+  effectiveFrom DateTime
+  effectiveTo   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime
+}
+
+model Transaction {
+  id            String   @id
+  date          DateTime
+  description   String
+  debitAmount   Decimal  @db.Decimal(15, 2)
+  creditAmount  Decimal  @db.Decimal(15, 2)
+  accountId     String
+  referenceType String?
+  referenceId   String?
+  createdAt     DateTime @default(now())
+  Account       Account  @relation(fields: [accountId], references: [id])
+
+  @@index([accountId])
+  @@index([date])
+  @@index([referenceType, referenceId])
+}
+
+model User {
+  id         String       @id
+  email      String       @unique
+  password   String
+  name       String
+  phone      String?
+  isActive   Boolean      @default(true)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime
+  roleId     String
+  Alert      Alert[]
+  AuditLog   AuditLog[]
+  Invoice    Invoice[]
+  Job        Job[]
+  SalesOrder SalesOrder[]
+  Role       Role         @relation(fields: [roleId], references: [id])
+
+  @@index([email])
+  @@index([roleId])
+}
+
+model Vendor {
+  id            String          @id
+  code          String          @unique
+  name          String
+  email         String?
+  phone         String?
+  gstin         String?
+  pan           String?
+  address       String?
+  city          String?
+  state         String?
+  pincode       String?
+  country       String          @default("India")
+  paymentTerms  String?
+  creditDays    Int?
+  isActive      Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime
+  Bill          Bill[]
+  PurchaseOrder PurchaseOrder[]
+
+  @@index([code])
+  @@index([name])
+}
